@@ -1,0 +1,47 @@
+name: jasa_new
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Supabase Flutter SDK (for database, auth, storage, etc.)
+  supabase_flutter: ^2.5.6
+  supabase: ^2.5.6
+
+  # Cupertino icons for iOS-style icons
+  cupertino_icons: ^1.0.8
+
+  # Image picker for uploading product images
+  image_picker: ^1.1.2
+
+  # Path provider for local file storage
+  path_provider: ^2.1.5
+
+  # Intl for date/time formatting (useful for bills & history)
+  intl: ^0.19.0
+
+  # ✅ For compressing product images before upload
+  flutter_image_compress: ^2.3.0
+
+  # ✅ For generating unique product IDs
+  uuid: ^4.4.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  # Add assets here later (example images, logos, etc.)
+  # assets:
+  #   - assets/images/
