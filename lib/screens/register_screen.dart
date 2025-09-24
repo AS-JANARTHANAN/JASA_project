@@ -76,135 +76,208 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 400),
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: isDark ? Colors.grey[900] : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    "Welcome 👋",
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Register",
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Name
-                  TextFormField(
-                    controller: _nameCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Full name',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (v) => (v == null || v.trim().isEmpty)
-                        ? 'Name is required'
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Email
-                  TextFormField(
-                    controller: _emailCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: _validateEmail,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Password
-                  TextFormField(
-                    controller: _passwordCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Password',
-                      border: OutlineInputBorder(),
-                    ),
-                    obscureText: true,
-                    validator: _validatePassword,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Role
-                  DropdownButtonFormField<String>(
-                    value: _role,
-                    decoration: const InputDecoration(
-                      labelText: 'Role',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: const [
-                      DropdownMenuItem(value: 'admin', child: Text('Admin')),
-                      DropdownMenuItem(value: 'user', child: Text('User')),
-                    ],
-                    onChanged: (v) => setState(() => _role = v),
-                    validator: (v) => (v == null || v.isEmpty)
-                        ? 'Please choose a role'
-                        : null,
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Register button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      onPressed: _loading ? null : _register,
-                      child: _loading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Text('Register Now'),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Login link
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pushReplacementNamed(context, '/login');
-                    },
-                    child: const Text("Already have an account? Login"),
+      backgroundColor: theme.colorScheme.background, // Consistent background
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16), // Reduced padding
+            child: Container(
+              constraints: const BoxConstraints(
+                maxWidth: 400, // Reduced max width
+              ), 
+              padding: const EdgeInsets.all(24), // Reduced inner padding
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface, // Consistent surface color
+                borderRadius: BorderRadius.circular(
+                  24,
+                ), // Consistent rounded corners
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.colorScheme.shadow.withOpacity(
+                      0.1,
+                    ), // Consistent softer shadow
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
                   ),
                 ],
+              ),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // App Logo/Title
+                    Icon(
+                      Icons.person_add_alt_1_outlined, // Icon for registration
+                      size: 60, // Reduced icon size
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      "Create Account",
+                      style: theme.textTheme.headlineSmall?.copyWith( // Reduced font size
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Register to get started",
+                      style: theme.textTheme.bodyMedium?.copyWith( // Reduced font size
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 24), // Reduced spacing
+                    // Name
+                    TextFormField(
+                      controller: _nameCtrl,
+                      decoration: InputDecoration(
+                        labelText: 'Full name',
+                        hintText: "Enter your full name",
+                        prefixIcon: const Icon(Icons.person_outline),
+                        border: const OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                        ),
+                        filled: true,
+                        fillColor: theme.colorScheme.surfaceVariant.withOpacity(
+                          0.3,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0), // Reduced padding
+                      ),
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'Name is required'
+                          : null,
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Email
+                    TextFormField(
+                      controller: _emailCtrl,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(
+                        labelText: 'Email',
+                        hintText: "Enter your email",
+                        prefixIcon: const Icon(Icons.email_outlined),
+                        border: const OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                        ),
+                        filled: true,
+                        fillColor: theme.colorScheme.surfaceVariant.withOpacity(
+                          0.3,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0), // Reduced padding
+                      ),
+                      validator: _validateEmail,
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Password
+                    TextFormField(
+                      controller: _passwordCtrl,
+                      obscureText: true,
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        hintText: "Create a password",
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        border: const OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                        ),
+                        filled: true,
+                        fillColor: theme.colorScheme.surfaceVariant.withOpacity(
+                          0.3,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0), // Reduced padding
+                      ),
+                      validator: _validatePassword,
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Role
+                    DropdownButtonFormField<String>(
+                      value: _role, // Use value instead of initialValue
+                      decoration: InputDecoration(
+                        labelText: 'Role',
+                        hintText: "Select your role",
+                        prefixIcon: const Icon(Icons.assignment_ind_outlined),
+                        border: const OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                        ),
+                        filled: true,
+                        fillColor: theme.colorScheme.surfaceVariant.withOpacity(
+                          0.3,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0), // Reduced padding
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'admin', child: Text('Admin')),
+                        DropdownMenuItem(value: 'user', child: Text('User')),
+                      ],
+                      onChanged: (v) => setState(() => _role = v),
+                      validator: (v) => (v == null || v.isEmpty)
+                          ? 'Please choose a role'
+                          : null,
+                    ),
+                    const SizedBox(height: 24), // Reduced spacing
+                    // Register button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48, // Reduced height
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: theme.colorScheme.primary,
+                          foregroundColor: theme.colorScheme.onPrimary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 5,
+                        ),
+                        onPressed: _loading ? null : _register,
+                        child: _loading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(
+                                'Register Now',
+                                style: theme.textTheme.titleMedium?.copyWith( // Reduced font size
+                                  color: theme.colorScheme.onPrimary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 16), // Reduced spacing
+                    // Login link
+                    Wrap( // Used Wrap for responsiveness
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(
+                          "Already have an account?",
+                          style: theme.textTheme.bodyMedium, // Reduced font size
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pushReplacementNamed(context, '/login');
+                          },
+                          style: TextButton.styleFrom(
+                            foregroundColor: theme.colorScheme.primary,
+                            textStyle: theme.textTheme.bodyMedium?.copyWith( // Reduced font size
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          child: const Text("Login"),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

@@ -4,6 +4,36 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class AuthService {
   final SupabaseClient _supabase = Supabase.instance.client;
 
+  Future<String> login({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final res = await _supabase.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+
+      final user = res.user;
+      if (user == null) {
+        throw Exception('Login failed: no user object returned.');
+      }
+
+      // Fetch the user's role from the 'profiles' table
+      final profileRes = await _supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+
+      return profileRes['role'] as String;
+    } on AuthException catch (e) {
+      throw Exception('Auth error: ${e.message}');
+    } catch (e) {
+      throw Exception('Login failed: ${e.toString()}');
+    }
+  }
+
   /// Register a new user and create a profile row.
   /// Throws an Exception on failure with a helpful message.
   Future<void> register({
@@ -41,6 +71,14 @@ class AuthService {
     } catch (e) {
       // Generic catch - includes HTTP / Postgrest errors
       throw Exception('Registration failed: ${e.toString()}');
+    }
+  }
+
+  Future<void> signOut() async {
+    try {
+      await _supabase.auth.signOut();
+    } catch (e) {
+      throw Exception('Logout failed: ${e.toString()}');
     }
   }
 }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'screens/register_screen.dart';
-import 'screens/login_screen.dart';
+import 'package:JASA/screens.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,92 +21,18 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo with Supabase',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+        useMaterial3: true,
       ),
-
-      // 👇 keep your original MyHomePage as default
-      home: const MyHomePage(title: 'Supabase Demo Home Page'),
-
-      // 👇 add routes for auth screens
+      initialRoute: '/splash',
       routes: {
-        '/register': (context) => RegisterScreen(), // removed const
-        '/login': (context) => LoginScreen(), // removed const
+        '/splash': (context) => SplashScreen(),
+        '/login': (context) => LoginScreen(),
+        '/register': (context) => RegisterScreen(),
+        '/add_product': (context) => AddProductScreen(),
+        '/admin_dashboard': (context) => AdminDashboard(),
+        '/user_dashboard': (context) => UserDashboard(),
       },
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
-
-  Future<void> _testSupabase() async {
-    final supabase = Supabase.instance.client;
-    final response = await supabase.from('test_table').select();
-    debugPrint("Supabase response: $response");
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Fetched ${response.length} rows from Supabase")),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _testSupabase,
-              child: const Text("Test Supabase Connection"),
-            ),
-            const SizedBox(height: 20),
-
-            // 👇 extra button to jump into Register screen for testing
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pushNamed(context, '/register');
-              },
-              child: const Text("Go to Register Screen"),
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pushNamed(context, '/login');
-              },
-              child: const Text("Go to Login Screen"),
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
     );
   }
 }

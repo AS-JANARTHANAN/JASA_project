@@ -1,75 +1,161 @@
 // lib/screens/admin/admin_dashboard.dart
 import 'package:flutter/material.dart';
-import 'package:jasa_new/screens/add_product_screen.dart'; // ✅ Import Add Product Page
+import 'package:JASA/services/auth_service.dart';
+import 'package:JASA/screens/add_product_screen.dart';
+import 'package:JASA/screens/admin/bill_history_screen.dart';
+import 'package:JASA/screens/admin/manage_stocks_screen.dart';
+import 'package:JASA/screens/admin/manage_users_screen.dart';
+import 'package:JASA/screens/admin/reports_screen.dart';
+import 'package:JASA/screens/admin/view_product_screen.dart';
+import 'package:JASA/screens/billing_screen.dart';
+import 'package:JASA/screens/admin/settings_screen.dart';
 
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     final features = [
-      {"title": "Add Product", "icon": Icons.add_box}, // ✅ Renamed for clarity
-      {"title": "Manage Users", "icon": Icons.people},
-      {"title": "Reports", "icon": Icons.bar_chart},
-      {"title": "Settings", "icon": Icons.settings},
+      {"title": "Billing", "icon": Icons.receipt_long_outlined, "screen": const BillingScreen()},
+      {"title": "Bill History", "icon": Icons.history_outlined, "screen": const BillHistoryScreen()},
+      {"title": "Add Product", "icon": Icons.add_box_outlined, "screen": const AddProductScreen()},
+      {"title": "View Products", "icon": Icons.view_list_outlined, "screen": const ViewProductScreen()},
+      {"title": "Manage Stocks", "icon": Icons.inventory_2_outlined, "screen": const ManageStocksScreen()},
+      {"title": "Manage Users", "icon": Icons.people_outline, "screen": const ManageUsersScreen()},
+      {"title": "Reports", "icon": Icons.bar_chart_outlined, "screen": ReportsScreen()},
+      {"title": "Settings", "icon": Icons.settings_outlined, "screen": const SettingsScreen()},
     ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Admin Dashboard")),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: GridView.builder(
-          itemCount: features.length,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
+      backgroundColor: theme.colorScheme.background,
+      appBar: AppBar(
+        title: Text(
+          "Admin Dashboard",
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.onSurface,
           ),
-          itemBuilder: (context, index) {
-            final feature = features[index];
-            return Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(16),
+        ),
+        backgroundColor: theme.colorScheme.surface,
+        elevation: 1,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout_outlined),
+            tooltip: "Logout",
+            onPressed: () async {
+              try {
+                await AuthService().signOut();
+                Navigator.of(context).pushReplacementNamed('/splash');
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Logout failed: $e')),
+                );
+              }
+            },
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Welcome, Admin!",
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onPrimaryContainer,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Here's an overview of your business.",
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.onPrimaryContainer.withOpacity(0.8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Grid Menu
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: features.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 1.1,
+            ),
+            itemBuilder: (context, index) {
+              final feature = features[index];
+              return InkWell(
+                borderRadius: BorderRadius.circular(24),
                 onTap: () {
-                  if (feature["title"] == "Add Product") {
+                  final screen = feature["screen"] as Widget?;
+                  if (screen != null) {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (_) => const AddProductScreen(),
-                      ),
+                      MaterialPageRoute(builder: (_) => screen),
                     );
                   } else {
-                    // 🚧 Later: Navigate to respective screen
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text("${feature["title"]} coming soon!"),
+                        behavior: SnackBarBehavior.floating,
                       ),
                     );
                   }
                 },
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      feature["icon"] as IconData,
-                      size: 48,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      feature["title"] as String,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ],
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.colorScheme.shadow.withOpacity(0.05),
+                        blurRadius: 20,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        feature["icon"] as IconData,
+                        size: 40,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        feature["title"] as String,
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            );
-          },
-        ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }

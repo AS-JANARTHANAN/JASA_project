@@ -1,4 +1,4 @@
-name: jasa_new
+name: JASA
 description: "A new Flutter project."
 publish_to: 'none'
 
@@ -12,8 +12,8 @@ dependencies:
     sdk: flutter
 
   # Supabase Flutter SDK (for database, auth, storage, etc.)
-  supabase_flutter: ^2.5.6
-  supabase: ^2.5.6
+  supabase_flutter: ^2.10.0
+  supabase: ^2.9.0
 
   # Cupertino icons for iOS-style icons
   cupertino_icons: ^1.0.8
@@ -33,11 +33,16 @@ dependencies:
   # ✅ For generating unique product IDs
   uuid: ^4.4.0
 
+  # PDF generation and printing
+  pdf: ^3.10.8
+  printing: ^5.11.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
 
 flutter:
   uses-material-design: true
@@ -45,3 +50,8 @@ flutter:
   # Add assets here later (example images, logos, etc.)
   # assets:
   #   - assets/images/
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/logo.png"
