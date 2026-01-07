@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:JASA/screens/add_product_screen.dart';
+import 'package:JASA/services/cache_service.dart';
+import 'package:JASA/widgets/cached_product_image.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ViewProductScreen extends StatefulWidget {
@@ -10,6 +12,8 @@ class ViewProductScreen extends StatefulWidget {
 }
 
 class _ViewProductScreenState extends State<ViewProductScreen> {
+  final CacheService _cacheService = CacheService();
+  
   List<Map<String, dynamic>> _products = [];
   List<Map<String, dynamic>> _filteredProducts = [];
   bool _isLoading = true;
@@ -20,7 +24,7 @@ class _ViewProductScreenState extends State<ViewProductScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchProducts();
+    _loadCachedProducts();
     _searchController.addListener(_filterProducts);
   }
 
@@ -30,7 +34,43 @@ class _ViewProductScreenState extends State<ViewProductScreen> {
     super.dispose();
   }
 
-  Future<void> _fetchProducts() async {
+  /// Load products from cache (instant loading!)
+  Future<void> _loadCachedProducts() async {
+    setState(() => _isLoading = true);
+    
+    try {
+      // Check if cache has data
+      if (_cacheService.products.isNotEmpty) {
+        // Apply category filter to cached data
+        List<Map<String, dynamic>> products;
+        
+        if (_selectedCategory != null && _selectedCategory != 'All') {
+          final categoryCode = _selectedCategory == 'own products' ? 'OWN' : 'SUD';
+          products = _cacheService.getProductsByCategory(categoryCode);
+        } else {
+          products = List.from(_cacheService.products);
+        }
+        
+        setState(() {
+          _products = products;
+          _filterProducts();
+          _isLoading = false;
+        });
+      } else {
+        // Cache is empty, fetch from server
+        await _fetchFromServer();
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error loading products: $e")),
+      );
+      setState(() => _isLoading = false);
+    }
+  }
+
+  /// Fetch from server (fallback)
+  Future<void> _fetchFromServer() async {
     setState(() => _isLoading = true);
     try {
       final supabase = Supabase.instance.client;
@@ -48,6 +88,9 @@ class _ViewProductScreenState extends State<ViewProductScreen> {
         _filterProducts();
         _isLoading = false;
       });
+      
+      // Update cache with fresh data
+      await _cacheService.forceRefresh();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -70,7 +113,7 @@ class _ViewProductScreenState extends State<ViewProductScreen> {
   void _onCategoryChanged(String? newValue) {
     setState(() {
       _selectedCategory = newValue;
-      _fetchProducts();
+      _loadCachedProducts();
     });
   }
 
@@ -109,6 +152,10 @@ class _ViewProductScreenState extends State<ViewProductScreen> {
             .update({'sort_order': i})
             .eq('product_id', _products[i]['product_id']);
       }
+      
+      // Update cache
+      await _cacheService.forceRefresh();
+      
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Product order updated successfully!')),
@@ -119,7 +166,7 @@ class _ViewProductScreenState extends State<ViewProductScreen> {
         SnackBar(content: Text("Error updating order: $e")),
       );
       // Revert order on failure
-      _fetchProducts();
+      _loadCachedProducts();
     }
   }
 
@@ -132,7 +179,9 @@ class _ViewProductScreenState extends State<ViewProductScreen> {
     );
 
     if (result == true) {
-      _fetchProducts(); // Refresh the list if a change was made
+      // Refresh cache and reload
+      await _cacheService.forceRefresh();
+      _loadCachedProducts();
     }
   }
 
@@ -141,6 +190,7 @@ class _ViewProductScreenState extends State<ViewProductScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: const Text('Confirm Deletion'),
           content: Text('Are you sure you want to delete "${product['name']}"? This action cannot be undone.'),
           actions: <Widget>[
@@ -175,13 +225,16 @@ class _ViewProductScreenState extends State<ViewProductScreen> {
             .delete()
             .eq('product_id', product['product_id']);
 
+        // 3. Remove from cache
+        _cacheService.removeProduct(product['product_id']);
+
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Product deleted successfully!')),
         );
 
-        // 3. Refresh the product list
-        _fetchProducts();
+        // 4. Refresh the product list from cache
+        _loadCachedProducts();
       } catch (e) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -191,12 +244,32 @@ class _ViewProductScreenState extends State<ViewProductScreen> {
     }
   }
 
+  Future<void> _refreshProducts() async {
+    await _cacheService.forceRefresh();
+    await _loadCachedProducts();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Products refreshed!'),
+          duration: Duration(seconds: 1),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('View Products'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh',
+            onPressed: _refreshProducts,
+          ),
           DropdownButton<String>(
             value: _selectedCategory ?? 'All',
             items: _categories.map((String category) {
@@ -219,12 +292,20 @@ class _ViewProductScreenState extends State<ViewProductScreen> {
               decoration: InputDecoration(
                 hintText: 'Search products...',
                 prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                        },
+                      )
+                    : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: Colors.grey[200],
+                fillColor: theme.colorScheme.surfaceVariant.withOpacity(0.3),
               ),
             ),
           ),
@@ -234,55 +315,114 @@ class _ViewProductScreenState extends State<ViewProductScreen> {
                 ? const Center(child: CircularProgressIndicator())
                 : _filteredProducts.isEmpty
                     ? Center(
-                        child: Text(
-                          _products.isEmpty
-                              ? 'No products found.'
-                              : 'No products match your search.',
-                          style: const TextStyle(fontSize: 16, color: Colors.grey),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.inventory_2_outlined,
+                              size: 64,
+                              color: theme.colorScheme.onSurface.withOpacity(0.3),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              _products.isEmpty
+                                  ? 'No products found.'
+                                  : 'No products match your search.',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                              ),
+                            ),
+                          ],
                         ),
                       )
-                    : ReorderableListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: _filteredProducts.length,
-                        itemBuilder: (context, index) {
-                          final product = _filteredProducts[index];
-                          return Card(
-                            key: ValueKey(product['product_id']),
-                            elevation: 4,
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                              leading: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: product['image_path'] != null
-                                    ? Image.network(
-                                        Supabase.instance.client.storage
-                                            .from('product-images')
-                                            .getPublicUrl(product['image_path']),
-                                        width: 50,
-                                        height: 50,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) =>
-                                            const Icon(Icons.broken_image, size: 50),
-                                      )
-                                    : const Icon(Icons.image_not_supported, size: 50),
+                    : RefreshIndicator(
+                        onRefresh: _refreshProducts,
+                        child: ReorderableListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: _filteredProducts.length,
+                          itemBuilder: (context, index) {
+                            final product = _filteredProducts[index];
+                            final imageUrl = _cacheService.getProductImageUrl(product);
+                            final imagePath = _cacheService.getProductImagePath(product);
+                            
+                            return Card(
+                              key: ValueKey(product['product_id']),
+                              elevation: 2,
+                              margin: const EdgeInsets.symmetric(vertical: 6),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
                               ),
-                              title: Text(product['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                              subtitle: Text(
-                                  'Price: ${product['price']} | Stock: ${product['stock']}'),
-                              trailing: ReorderableDragStartListener(
-                                index: index,
-                                child: const Icon(Icons.drag_handle, color: Colors.grey),
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                leading: CachedProductImage(
+                                  imageUrl: imageUrl,
+                                  imagePath: imagePath,
+                                  width: 56,
+                                  height: 56,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                title: Text(
+                                  product['name'],
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                subtitle: Row(
+                                  children: [
+                                    Text('₹${product['price']}'),
+                                    const SizedBox(width: 12),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: (product['stock'] as int) > 0
+                                            ? Colors.green.withOpacity(0.1)
+                                            : Colors.red.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        'Stock: ${product['stock']}',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: (product['stock'] as int) > 0
+                                              ? Colors.green
+                                              : Colors.red,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(
+                                        Icons.delete_outline,
+                                        color: Colors.red.withOpacity(0.7),
+                                      ),
+                                      onPressed: () => _deleteProduct(product),
+                                      tooltip: 'Delete',
+                                    ),
+                                    ReorderableDragStartListener(
+                                      index: index,
+                                      child: Icon(
+                                        Icons.drag_handle,
+                                        color: theme.colorScheme.onSurface.withOpacity(0.4),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                onTap: () => _editProduct(product),
                               ),
-                              onTap: () => _editProduct(product),
-                              onLongPress: () => _deleteProduct(product), // Alternative delete action
-                            ),
-                          );
-                        },
-                        onReorder: _onReorder,
+                            );
+                          },
+                          onReorder: _onReorder,
+                        ),
                       ),
           ),
         ],

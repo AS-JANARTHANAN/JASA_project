@@ -37,6 +37,19 @@ dependencies:
   pdf: ^3.10.8
   printing: ^5.11.1
 
+  # ✅ Local caching for offline-first experience
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
+  # ✅ Image caching for fast loading
+  cached_network_image: ^3.4.1
+
+  # ✅ Network connectivity monitoring
+  connectivity_plus: ^6.1.0
+
+  # ✅ HTTP client for image downloads
+  http: ^1.2.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

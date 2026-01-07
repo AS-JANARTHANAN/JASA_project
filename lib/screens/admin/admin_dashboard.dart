@@ -3,12 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:JASA/services/auth_service.dart';
 import 'package:JASA/screens/add_product_screen.dart';
 import 'package:JASA/screens/admin/bill_history_screen.dart';
+import 'package:JASA/screens/admin/gst_bill_screen.dart';
 import 'package:JASA/screens/admin/manage_stocks_screen.dart';
 import 'package:JASA/screens/admin/manage_users_screen.dart';
+import 'package:JASA/screens/admin/pending_bills_screen.dart';
 import 'package:JASA/screens/admin/reports_screen.dart';
 import 'package:JASA/screens/admin/view_product_screen.dart';
 import 'package:JASA/screens/billing_screen.dart';
 import 'package:JASA/screens/admin/settings_screen.dart';
+import 'package:JASA/widgets/sync_status_widget.dart';
 
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({super.key});
@@ -20,6 +23,8 @@ class AdminDashboard extends StatelessWidget {
     final features = [
       {"title": "Billing", "icon": Icons.receipt_long_outlined, "screen": const BillingScreen()},
       {"title": "Bill History", "icon": Icons.history_outlined, "screen": const BillHistoryScreen()},
+      {"title": "GST Bill", "icon": Icons.account_balance_outlined, "screen": const GSTBillScreen()},
+      {"title": "Pending Bills", "icon": Icons.cloud_sync_outlined, "screen": const PendingBillsScreen()},
       {"title": "Add Product", "icon": Icons.add_box_outlined, "screen": const AddProductScreen()},
       {"title": "View Products", "icon": Icons.view_list_outlined, "screen": const ViewProductScreen()},
       {"title": "Manage Stocks", "icon": Icons.inventory_2_outlined, "screen": const ManageStocksScreen()},
@@ -87,7 +92,12 @@ class AdminDashboard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+          
+          // Sync Status Banner (only shows if offline or pending)
+          const SyncStatusBanner(),
+          
+          const SizedBox(height: 16),
 
           // Grid Menu
           GridView.builder(
